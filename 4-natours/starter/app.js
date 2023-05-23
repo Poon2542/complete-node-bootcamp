@@ -14,6 +14,8 @@ app.use(express.json()); //middleware -> modify request respond
 //middleware
 app.use(morgan('dev')); //very useful for tracking api
 
+app.use(express.static(`${__dirname}/public`));
+
 app.use((req,res,next) =>{ //third argument = middleware function (in this case = next)
     console.log('Hello from the middleware');
     next();
