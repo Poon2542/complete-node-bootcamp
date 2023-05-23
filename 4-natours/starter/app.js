@@ -2,10 +2,24 @@
 
 const express = require('express');
 const fs = require('fs');
+const morgan = require('morgan');
 
 const app = express();
 
 app.use(express.json()); //middleware -> modify request respond
+
+//middleware
+app.use((req,res,next) =>{ //third argument = middleware function (in this case = next)
+    console.log('Hello from the middleware');
+    next();
+});
+
+//when exactly request happen ?? -> use middleware !!
+app.use((req,res,next) =>{ //third argument = middleware function (in this case = next)
+    req.requestTime = new Date().toISOString(); //convert to string
+    next();
+});
+
 
 /*
 //node app are all about request - response
@@ -27,11 +41,12 @@ const tours = JSON.parse(fs.readFileSync(`${__dirname}/dev-data/data/tours-simpl
 //route handler - callback function - run inside event loop
 
 const getAllTours = (req,res)=>{
-
+    console.log(req.requestTime);
     res.status(200).json({
         status:'success',
         results: tours.length, //sending array with multiple object
         data: {
+         requestedAt : req.requestTime,
          tours: tours //send back object that have tours propertie
         }
     })
@@ -60,7 +75,7 @@ const getOneTours = (req,res)=>{ //:id =define var !need to have colomn!
     })
 }; 
 
-const postToursId = (req,res) =>{ //request,respond
+const updateToursId = (req,res) =>{ //request,respond
     //we'll be using middleware first. 
     const newId = tours[tours.length-1].id + 1;
     const newTour = Object.assign({id : newId},req.body) //create new object,we assign only newId
@@ -115,7 +130,7 @@ const deleteToursId = (req,res) =>{
 
 }
 
-
+/*
 //get all
 app.get('/api/v1/tours', getAllTours);
 
@@ -123,14 +138,22 @@ app.get('/api/v1/tours', getAllTours);
 app.get('/api/v1/tours/:id/', getOneTours);
 
 //add tour data via id
-app.post('/api/v1/tours',postToursId);
+app.post('/api/v1/tours',updateToursId);
 
 //update propertie on object
 app.patch('/api/v1/tours/:id',changeToursId);
 
 //delete
-app.delete('/api/v1/tours/:id',deleteToursId);
+app.delete('/api/v1/tours/:id',deleteToursId);*/
 
+app.route('/api/v1/tours') 
+    .get(getAllTours)
+    .post(updateToursId);
+
+app.route('/api/v1/tours/:id')
+    .get(getOneTours)
+    .patch(changeToursId)
+    .delete(deleteToursId);
 
 const port = 3000;
 
