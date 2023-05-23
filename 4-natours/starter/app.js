@@ -6,9 +6,14 @@ const morgan = require('morgan');
 
 const app = express();
 
+const tourRouter = require('./router/tourRoute')
+const usersRouter = require('./router/userRoute')
+
 app.use(express.json()); //middleware -> modify request respond
 
 //middleware
+app.use(morgan('dev')); //very useful for tracking api
+
 app.use((req,res,next) =>{ //third argument = middleware function (in this case = next)
     console.log('Hello from the middleware');
     next();
@@ -36,100 +41,6 @@ app.post('/',(req,res) =>{ //send default specify any code (this is not get meth
     res.send('You can post to the endpoint');
 })*/
 
-
-const tours = JSON.parse(fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`)); //read data
-//route handler - callback function - run inside event loop
-
-const getAllTours = (req,res)=>{
-    console.log(req.requestTime);
-    res.status(200).json({
-        status:'success',
-        results: tours.length, //sending array with multiple object
-        data: {
-         requestedAt : req.requestTime,
-         tours: tours //send back object that have tours propertie
-        }
-    })
-}; //get data via api/v1/tours -> we should always specify version of api
-
-const getOneTours = (req,res)=>{ //:id =define var !need to have colomn!
-
-    console.log(req.params); //request parameter from link url
-    //find element where id is equal to parameter
-    const id = req.params.id * 1; //convert string to number from parameter
-    
-    if(id > tours.length || id < 0){
-        return res.status(404).json({
-            status : 'fail',
-            message: 'Invalid ID'
-        });
-    }
-    
-    const tour = tours.find(el => el.id === id);
-
-    res.status(200).json({
-        status:'success',
-        data :{
-            tour : tour
-        }
-    })
-}; 
-
-const updateToursId = (req,res) =>{ //request,respond
-    //we'll be using middleware first. 
-    const newId = tours[tours.length-1].id + 1;
-    const newTour = Object.assign({id : newId},req.body) //create new object,we assign only newId
-    
-    tours.push(newTour);
-    fs.writeFile(`${__dirname}/dev-data/data/tours-simple.json`,JSON.stringify(tours),err=>{
-        res.status(201).json({
-            status: 'success',
-            data : {
-                tour: newTour
-            }
-        }); //created (200 = OKAY,201 = CREATED object)
-
-    }); //dont use synchronous one !!!!!
-    
-    console.log(req.body);
-    //res.send('Done');
-} //url is exactly the same
-
-const changeToursId = (req,res) =>{
-
-    if( req.params.id*1 > tours.length || req.params.id < 0){
-        return res.status(404).json({
-            status : 'fail',
-            message: 'Invalid ID'
-        });
-    }
-
-    res.status(200).json({
-        status: 'success',
-        data: {
-            tour: '<Updated tour here...>'
-        }
-    })
-}
-
-const deleteToursId = (req,res) =>{
-
-    if( req.params.id*1 > tours.length || req.params.id < 0){
-        return res.status(404).json({
-            status : 'fail',
-            message: 'Invalid ID'
-        });
-    }
-
-    res.status(204).json({ //204 = delete
-        status: 'success',
-        data: {
-            tour: '<delete finish...>'
-        }
-    })
-
-}
-
 /*
 //get all
 app.get('/api/v1/tours', getAllTours);
@@ -146,19 +57,13 @@ app.patch('/api/v1/tours/:id',changeToursId);
 //delete
 app.delete('/api/v1/tours/:id',deleteToursId);*/
 
-app.route('/api/v1/tours') 
-    .get(getAllTours)
-    .post(updateToursId);
+//route
+//const tourRouter = express.Router();
+//const usersRouter = express.Router();
 
-app.route('/api/v1/tours/:id')
-    .get(getOneTours)
-    .patch(changeToursId)
-    .delete(deleteToursId);
+//middle ware stack - MOUNT ROUTER
+app.use('/api/v1/tours',tourRouter); //middleware function -when it match will run tourRouter
+app.use('/api/v1/users',usersRouter);
 
-const port = 3000;
 
-app.listen(port,() =>{
-
-    console.log(`App running on ${port}...`);
-});
-
+module.exports = app;
