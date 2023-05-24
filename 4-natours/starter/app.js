@@ -11,8 +11,11 @@ const usersRouter = require('./router/userRoute')
 
 app.use(express.json()); //middleware -> modify request respond
 
-//middleware
-app.use(morgan('dev')); //very useful for tracking api
+//console.log(process.env.NODE_ENV);
+if(process.env.NODE_ENV === 'development'){
+    //middleware
+    app.use(morgan('dev')); //very useful for tracking api
+}
 
 app.use(express.static(`${__dirname}/public`));
 
