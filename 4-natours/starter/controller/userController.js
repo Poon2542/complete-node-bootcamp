@@ -35,5 +35,4 @@ exports.deleteUser= (req,res) => {
         status : 'error',
         message : 'This route is not yet defind'
     }); //internal server error , under confiugration
-
 }

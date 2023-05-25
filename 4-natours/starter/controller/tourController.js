@@ -2,6 +2,7 @@ const fs = require('fs');
 
 const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)); //read data
 
+//middleware checker
 exports.checkID = (req,res,next,val) => {
     if(req.params.id > tours.length || req.params.id < 0){
         return res.status(404).json({ //we need to have this return else t will continue
