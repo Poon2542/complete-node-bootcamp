@@ -4,7 +4,7 @@ const fs = require('fs');
 const tourController = require('./../controller/tourController'); //.. move up 1 level
 const tourRouter = express.Router(); //we call inside router as tour
 
-tourRouter.param('id',tourController.checkID); //if paramitter that send back is id it will ping id
+//tourRouter.param('id',tourController.checkID); //if paramitter that send back is id it will ping id
 
 //create a checkBody middleware
 //check if body contain the name and price property
@@ -14,7 +14,7 @@ tourRouter.param('id',tourController.checkID); //if paramitter that send back is
 tourRouter
     .route('/') 
     .get(tourController.getAllTours)
-    .post(tourController.checkBody,tourController.updateToursId); //do check body first before updatetour
+    .post(tourController.updateToursId); //do check body first before updatetour
 
 tourRouter
     .route('/:id')
