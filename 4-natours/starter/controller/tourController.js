@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)); //read data
+const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`)); //read data ->JSON.parse will turn it into data object
 
 //middleware checker
 exports.checkID = (req,res,next,val) => {
@@ -13,7 +13,7 @@ exports.checkID = (req,res,next,val) => {
     next();
 }
 exports.checkBody = (req,res,next) => {
-    if(!req.body.name || !req.body.price){
+    if(!req.body.name || !req.body.price){ //if there is no body name - body price
         return res.status(400).json({
             status: 'fail',
             message: 'Missing name or price'
