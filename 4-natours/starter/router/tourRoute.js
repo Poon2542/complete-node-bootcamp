@@ -11,6 +11,10 @@ const tourRouter = express.Router(); //we call inside router as tour
 //if not 400 (bad request)
 //Add it to the post handler stack
 
+//create specific route - by running middleware to manipulate query object
+tourRouter.route('/top-5-cheap')
+    .get(tourController.aliasTopTours,tourController.getAllTours)
+
 tourRouter
     .route('/') 
     .get(tourController.getAllTours)

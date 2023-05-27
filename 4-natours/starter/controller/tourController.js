@@ -15,6 +15,50 @@ const Tour = require('./../models/tourModel');
     }
     next();
 }*/
+
+//middleware for tour
+exports.aliasTopTours = (req,res,next) => {
+
+    req.query.limit = '5'; //set propertie limit to 5
+    req.query.sort = '-ratingAverage,price'; //sort by descending using rating average then price
+    req.query.fields = 'name,price,ratingsAverage,summary,difficulty'; //define field we want to get
+
+    next();
+};
+
+//WHAT - JAVA CLASS GO BACK AND READ THEM
+class APIFeatures {
+    constructor(query,queryString){
+        this.query = query;
+        this.queryString = queryString;
+    }
+
+    filter(){
+        const queryObj = {...this.queryString}; //create structure from req.query object
+        const excludedFields = ['page','sort','limit','fields'] //delete all page sort limit fields
+        excludedFields.forEach(el=> delete queryObj[el]) //delete all field in queryobject
+    
+        //1) advance filtering - gte,gt,lte,lt - WTF ?????
+        let queryStr = JSON.stringify(queryObj);
+        queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g,match =>`$${match}`) //regular expression - we need to clean it out
+        //console.log(JSON.parse(queryStr));
+        this.query.find(JSON.parse(queryStr));
+        //let query = Tour.find(JSON.parse(queryStr));
+    }
+    sort(){
+        if(this.query.sort){
+            const sortBy = this.query.sort.split(',').join(' ');
+            this.query = this.query.sort(sortBy);
+            //sort by second criteria
+            //sort('price rating average')
+        }else{
+            this.query = this.query.sort('-createdAt');
+        }
+
+
+    }
+}
+
 exports.checkBody = (req,res,next) => {
     /*if(!req.body.name || !req.body.price){ //if there is no body name - body price
         return res.status(400).json({
@@ -31,7 +75,7 @@ exports.getAllTours =  async (req,res)=>{
     //console.log(req.query);
 
     //filtering
-    const queryObj = {...req.query}; //create structure from req.query object
+    /*const queryObj = {...req.query}; //create structure from req.query object
     const excludedFields = ['page','sort','limit','fields'] //delete all page sort limit fields
     excludedFields.forEach(el=> delete queryObj[el]) //delete all field in queryobject
 
@@ -40,10 +84,10 @@ exports.getAllTours =  async (req,res)=>{
     queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g,match =>`$${match}`) //regular expression - we need to clean it out
     //console.log(JSON.parse(queryStr));
 
-    let query = Tour.find(JSON.parse(queryStr));
+    let query = Tour.find(JSON.parse(queryStr));*/
     
     //2)sorting
-    if(req.query.sort){
+    /*if(req.query.sort){
         const sortBy = req.query.sort.split(',').join(' ');
         console.log(sortBy)
         query = query.sort(sortBy);
@@ -51,7 +95,7 @@ exports.getAllTours =  async (req,res)=>{
         //sort('price rating average')
     }else{
         query = query.sort('-createdAt');
-    }
+    }*/
     
     //3) Field Limiting
     if(req.query.fields){
@@ -66,12 +110,18 @@ exports.getAllTours =  async (req,res)=>{
     const page = req.query.page * 1 || 1; //turn string into int, || = default 1
     const limit = req.query.limit * 1 || 100; //100 page limit
     const skip = (page-1)*limit;
-    query = query.skip(skip).limit(limit) //limit = amount of result that we have in query
+    query = query.skip(skip).limit(limit); //limit = amount of result that we have in query
     //skip = get result skip 2 then select
 
-    //const query = Tour.find(queryObj);
-    //Advance filter query
-    const tours = await query;
+    if(req.query.page){
+        const numTours = await Tour.countDocuments();
+        if(skip >= numTours) throw new Error('This page does not exist');
+    }
+
+
+    //EXECUTE QUERY
+    const features = new APIFeatures(Tour.find(), req.query).filter();
+    const tours = await features.query;
 
     /*const tours = await Tour.find({
         duration: 5,
