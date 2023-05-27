@@ -43,4 +43,12 @@ const deleteData = async() =>{
     }
 }
 
+//node models/import-dev-data.js --import
+if(process.argv[2] ==='--import'){
+    importData();
+//node models/import-dev-data.js --delete
+}else if(process.argv[2] === '--delete'){
+    deleteData();
+}
+
 console.log(process.argv);

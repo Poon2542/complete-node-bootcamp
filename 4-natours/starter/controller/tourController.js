@@ -26,9 +26,63 @@ exports.checkBody = (req,res,next) => {
 }
 
 exports.getAllTours =  async (req,res)=>{
-    console.log(req.requestTime);
 
-    const tours = await Tour.find() //MongoDB use find method to get all document
+    //Query
+    //console.log(req.query);
+
+    //filtering
+    const queryObj = {...req.query}; //create structure from req.query object
+    const excludedFields = ['page','sort','limit','fields'] //delete all page sort limit fields
+    excludedFields.forEach(el=> delete queryObj[el]) //delete all field in queryobject
+
+    //1) advance filtering - gte,gt,lte,lt - WTF ?????
+    let queryStr = JSON.stringify(queryObj);
+    queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g,match =>`$${match}`) //regular expression - we need to clean it out
+    //console.log(JSON.parse(queryStr));
+
+    let query = Tour.find(JSON.parse(queryStr));
+    
+    //2)sorting
+    if(req.query.sort){
+        const sortBy = req.query.sort.split(',').join(' ');
+        console.log(sortBy)
+        query = query.sort(sortBy);
+        //sort by second criteria
+        //sort('price rating average')
+    }else{
+        query = query.sort('-createdAt');
+    }
+    
+    //3) Field Limiting
+    if(req.query.fields){
+        const fields = req.query.fields.split(',').join(' ');
+        query = query.select(fields)
+        //query = query.select('name duration price') //select only these field name
+    }else{
+        query = query.select('-__v'); //excluding __v field from select
+    }
+    
+    //4) Pagination (paging limit)
+    const page = req.query.page * 1 || 1; //turn string into int, || = default 1
+    const limit = req.query.limit * 1 || 100; //100 page limit
+    const skip = (page-1)*limit;
+    query = query.skip(skip).limit(limit) //limit = amount of result that we have in query
+    //skip = get result skip 2 then select
+
+    //const query = Tour.find(queryObj);
+    //Advance filter query
+    const tours = await query;
+
+    /*const tours = await Tour.find({
+        duration: 5,
+        difficulty: 'easy'
+    });*/ //MongoDB use find method to get all document
+
+    /*const tours = await Tour.find()
+        .where('duration')
+        .equals(5)
+        .where('difficulty')
+        .equals('easy')*/
 
     try{
         res.status(200).json({

@@ -49,7 +49,8 @@ const tourSchema = new mongoose.Schema({ //basic describing data
     images : [String], //as an array of string of image so that we can get later
     createdAt : {  //timestamp set by the time that user add new tour
         type : Date,
-        default : Date.now()
+        default : Date.now(),
+        select: false
     },
     startDates : [Date] //different date that tours start-- WHY ???
     //MongoDB neet to parse daa that we get in and parse it as a date
