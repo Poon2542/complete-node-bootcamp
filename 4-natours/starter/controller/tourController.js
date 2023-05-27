@@ -28,7 +28,7 @@ exports.aliasTopTours = (req,res,next) => {
 
 //WHAT - JAVA CLASS GO BACK AND READ THEM
 class APIFeatures {
-    constructor(query,queryString){
+    constructor(query,queryString){ //query = mongoose query, queryString = query string that we get from express module (website) (normally it is req)
         this.query = query;
         this.queryString = queryString;
     }
@@ -44,18 +44,37 @@ class APIFeatures {
         //console.log(JSON.parse(queryStr));
         this.query.find(JSON.parse(queryStr));
         //let query = Tour.find(JSON.parse(queryStr));
+        return this;
     }
     sort(){
-        if(this.query.sort){
-            const sortBy = this.query.sort.split(',').join(' ');
+        if(this.queryString.sort){
+            const sortBy = this.queryString.sort.split(',').join(' ');
             this.query = this.query.sort(sortBy);
             //sort by second criteria
             //sort('price rating average')
         }else{
             this.query = this.query.sort('-createdAt');
         }
+        return this;
+    }
+    limitFields() {
+        if(this.query.fields){
+            const fields = this.query.fields.split(',').join(' ');
+            this.query = this.query.select(fields)
+            //query = query.select('name duration price') //select only these field name
+        }else{
+            this.query = this.query.select('-__v'); //excluding __v field from select
+        }
+        return this;
+    }
+    paginate(){
+        const page = this.query.page * 1 || 1; //turn string into int, || = default 1
+        const limit = this.query.limit * 1 || 100; //100 page limit
+        const skip = (page-1)*limit;
+        this.query = this.query.skip(skip).limit(limit); //limit = amount of result that we have in query
+        //skip = get result skip 2 then select
 
-
+        return this;
     }
 }
 
@@ -98,16 +117,16 @@ exports.getAllTours =  async (req,res)=>{
     }*/
     
     //3) Field Limiting
-    if(req.query.fields){
+    /*if(req.query.fields){
         const fields = req.query.fields.split(',').join(' ');
         query = query.select(fields)
         //query = query.select('name duration price') //select only these field name
     }else{
         query = query.select('-__v'); //excluding __v field from select
-    }
+    }*/
     
     //4) Pagination (paging limit)
-    const page = req.query.page * 1 || 1; //turn string into int, || = default 1
+    /*const page = req.query.page * 1 || 1; //turn string into int, || = default 1
     const limit = req.query.limit * 1 || 100; //100 page limit
     const skip = (page-1)*limit;
     query = query.skip(skip).limit(limit); //limit = amount of result that we have in query
@@ -116,11 +135,15 @@ exports.getAllTours =  async (req,res)=>{
     if(req.query.page){
         const numTours = await Tour.countDocuments();
         if(skip >= numTours) throw new Error('This page does not exist');
-    }
+    }*/
 
 
-    //EXECUTE QUERY
-    const features = new APIFeatures(Tour.find(), req.query).filter();
+    //EXECUTE QUERY - Keep adding stuff in the query until the end
+    const features = new APIFeatures(Tour.find(), req.query)
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate();
     const tours = await features.query;
 
     /*const tours = await Tour.find({
