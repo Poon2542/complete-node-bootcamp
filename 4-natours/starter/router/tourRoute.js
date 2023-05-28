@@ -12,6 +12,12 @@ const tourRouter = express.Router(); //we call inside router as tour
 //Add it to the post handler stack
 
 //create specific route - by running middleware to manipulate query object
+tourRouter.route('/tour-monthly-plan/:year')
+    .get(tourController.getMonthlyPlan)
+
+tourRouter.route('/tour-stats')
+    .get(tourController.getTourStats)
+
 tourRouter.route('/top-5-cheap')
     .get(tourController.aliasTopTours,tourController.getAllTours)
 

@@ -217,7 +217,7 @@ exports.changeToursId = async(req,res) =>{
     try{
         const tour = await Tour.findByIdAndUpdate(req.params.id,req.body,{
             new:true, //return the document
-            runValidators : true
+            runValidators : true //for checking validator such as name length etc. see tourModel
         });
 
         res.status(200).json({
@@ -226,6 +226,8 @@ exports.changeToursId = async(req,res) =>{
                 tour:tour
             }
         });
+
+        
 
     }catch(error){
         res.status(400).json({
@@ -251,5 +253,97 @@ exports.deleteToursId = async (req,res) =>{
             status : 'fail',
             message : err
         });
+    }
+}
+
+exports.getTourStats = async (req,res) => {
+    try{
+        const stats = await Tour.aggregate([
+            {
+                $match : {ratingsAverage : { $gte: 4.5}}
+            },
+            {
+                $group : { //allow to group document together using accumulator
+                    _id : '$difficulty', //groupby difficulty
+                    numTours : {$sum : 1}, //for each doc we go to,add 1
+                    numRating : { $sum : '$ratingsQuantity'},
+                    avgRating: {$avg : '$ratingsAverage'},
+                    avgPrice: { $avg : '$price'},
+                    minPrice: { $min : '$price'},
+                    maxPrice: { $max : '$price'}
+                }
+            },
+            {
+                $sort : { avgPrice : 1}
+            }
+        ]); //use to manipulate data
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                stats : stats
+            }
+        });
+
+    } catch (error){
+        res.status(404).json({
+            status : 'fail',
+            message : error
+        })
+    }
+}
+
+exports.getMonthlyPlan = async (req,res) => {
+    try {
+        const year = req.params.year * 1;
+        const plan = await Tour.aggregate([
+            {
+                $unwind: '$startDates'
+            },
+            {
+                $match : {
+                    startDates : {
+                        //we want our date to be greater - equal to ths
+                        $gte : new Date(`${year}-01-01`), //greater thab work perfectly fine
+                        $lte : new Date(`${year}-12-31`)
+                    }
+                }
+            },
+            {
+                $group : {
+                    _id : { $month : `$startDates`},
+                    numTourStarts : {$sum : 1},
+                    tours : {$push : '$name'} //create array using push
+                },
+            },
+            {
+                $addFields : {month : '$_id'}
+            },
+            {
+                $project : {
+                    _id : 0
+
+                }
+            },
+            {
+                $sort : {numTourStarts: -1} //1 = ascending ,-1 = descending
+            },
+            {
+                $limit : 6
+            }
+        ]);
+        
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                plan : plan
+            }
+        });
+    }catch (error){
+        res.status(404).json({
+            status : 'fail',
+            message : error
+        })
     }
 }
