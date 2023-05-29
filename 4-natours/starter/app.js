@@ -6,6 +6,8 @@ const morgan = require('morgan');
 
 const app = express();
 
+const AppError = require('./utils/appError')
+const globalErrorHandler = require('./controller/errorController')
 const tourRouter = require('./router/tourRoute')
 const usersRouter = require('./router/userRoute')
 
@@ -19,10 +21,10 @@ if(process.env.NODE_ENV === 'development'){
 
 app.use(express.static(`${__dirname}/public`));
 
-app.use((req,res,next) =>{ //third argument = middleware function (in this case = next)
+/*app.use((req,res,next) =>{ //third argument = middleware function (in this case = next)
     console.log('Hello from the middleware');
     next();
-});
+});*/
 
 //when exactly request happen ?? -> use middleware !!
 app.use((req,res,next) =>{ //third argument = middleware function (in this case = next)
@@ -69,6 +71,23 @@ app.delete('/api/v1/tours/:id',deleteToursId);*/
 //middle ware stack - MOUNT ROUTER
 app.use('/api/v1/tours',tourRouter); //middleware function -when it match will run tourRouter
 app.use('/api/v1/users',usersRouter);
+
+//Error handling undefine route
+//it need to be in the last of the stack (behind use middleware)
+app.all('*',(req,res,next)=>{ // * = everything that come here and all = every verb url
+    /*res.status(404).json({
+        status : 'fail',
+        message : `Can't find ${req.originalUrl} on this server!`
+    })*/
+
+    /*const err = new Error( `Can't find ${req.originalUrl} on this server!`);
+    err.status = 'fail';
+    err.statusCode = 404;*/
+    next(new AppError(`Can't find ${req.originalUrl} on this server!`,404)); //if we pass something into next it will skip all other middleware inthe stack to err middleware
+});
+
+//middleware for sending err
+app.use(globalErrorHandler);
 
 
 module.exports = app;
